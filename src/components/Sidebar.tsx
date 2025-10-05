@@ -61,7 +61,7 @@ export const Sidebar = () => {
       <aside
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          bg-sidebar-background border-r border-sidebar-border
+          bg-[#2F3E9E] border-r border-[#1F2A7A]
           shadow-lg
           transition-transform duration-300 ease-in-out
           w-64
@@ -70,8 +70,8 @@ export const Sidebar = () => {
       >
         <div className="flex flex-col h-full overflow-y-auto">
           {/* Header */}
-          <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border/50">
-            <h1 className="text-lg font-bold text-sidebar-foreground flex items-center gap-2">
+          <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
+            <h1 className="text-lg font-bold text-white flex items-center gap-2">
               <School className="h-5 w-5" />
               Daycare Nest
             </h1>
@@ -80,7 +80,7 @@ export const Sidebar = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="text-sidebar-foreground hover:bg-sidebar-accent"
+                className="text-white hover:bg-white/10"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -170,7 +170,7 @@ export const Sidebar = () => {
         <Button
           onClick={() => setIsOpen(true)}
           size="icon"
-          className="fixed top-4 left-4 z-40 bg-sidebar-background text-white hover:bg-[#5F63EC] shadow-lg"
+          className="fixed top-4 left-4 z-40 bg-[#2F3E9E] text-white hover:bg-[#5F63EC] shadow-lg"
         >
           <Menu className="h-5 w-5" />
         </Button>
