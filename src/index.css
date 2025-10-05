@@ -46,10 +46,13 @@ All colors MUST be HSL.
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 238 80% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 233 54% 50%;
+    --sidebar-accent: 238 80% 65%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 233 54% 35%;
     --sidebar-ring: 43 100% 71%;
+    --sidebar-hover: 238 80% 65%;
+    --sidebar-active-bg: 43 100% 71%;
+    --sidebar-active-text: 233 54% 40%;
   }
 
   .dark {
@@ -88,10 +91,13 @@ All colors MUST be HSL.
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 238 80% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 233 54% 40%;
+    --sidebar-accent: 238 80% 65%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 233 54% 25%;
     --sidebar-ring: 43 100% 71%;
+    --sidebar-hover: 238 80% 65%;
+    --sidebar-active-bg: 43 100% 71%;
+    --sidebar-active-text: 233 54% 30%;
   }
 }
 

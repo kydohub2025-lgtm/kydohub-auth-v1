@@ -62,6 +62,7 @@ export const Sidebar = () => {
         className={`
           fixed lg:static inset-y-0 left-0 z-50
           bg-sidebar-background border-r border-sidebar-border
+          shadow-lg
           transition-transform duration-300 ease-in-out
           w-64
           ${isMobile && !isOpen ? '-translate-x-full' : 'translate-x-0'}
@@ -98,7 +99,7 @@ export const Sidebar = () => {
                   <div key={item.title} className="space-y-1">
                     <button
                       onClick={() => toggleGroup(item.title)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-white hover:bg-[#5F63EC]/20 transition-all duration-150 ease-in-out"
                     >
                       <div className="flex items-center gap-3">
                         <Icon className="h-5 w-5 flex-shrink-0" />
@@ -119,11 +120,11 @@ export const Sidebar = () => {
                               key={child.path}
                               to={child.path}
                               className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-colors text-sm
+                                `flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-150 ease-in-out text-sm relative
                                 ${
                                   isActive
-                                    ? 'bg-white text-sidebar-background font-medium shadow-sm'
-                                    : 'text-sidebar-foreground/90 hover:bg-sidebar-accent'
+                                    ? 'bg-[#5F63EC]/30 text-white font-medium border-l-4 border-[#FFD36E]'
+                                    : 'text-white/90 hover:bg-[#5F63EC]/20'
                                 }
                                 `
                               }
@@ -145,11 +146,11 @@ export const Sidebar = () => {
                   key={item.path}
                   to={item.path}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
+                    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 ease-in-out relative
                     ${
                       isActive
-                        ? 'bg-white text-sidebar-background font-medium shadow-sm'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent'
+                        ? 'bg-[#5F63EC]/30 text-white font-medium border-l-4 border-[#FFD36E]'
+                        : 'text-white hover:bg-[#5F63EC]/20'
                     }
                     `
                   }
@@ -169,7 +170,7 @@ export const Sidebar = () => {
         <Button
           onClick={() => setIsOpen(true)}
           size="icon"
-          className="fixed top-4 left-4 z-40 bg-sidebar-background text-sidebar-foreground hover:bg-sidebar-accent"
+          className="fixed top-4 left-4 z-40 bg-sidebar-background text-white hover:bg-[#5F63EC] shadow-lg"
         >
           <Menu className="h-5 w-5" />
         </Button>
