@@ -12,36 +12,36 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
-const Students = () => {
-  const students = [
-    { id: 1, name: 'Emma Johnson', age: 4, class: 'Preschool A', status: 'Active' },
-    { id: 2, name: 'Liam Smith', age: 3, class: 'Toddler B', status: 'Active' },
-    { id: 3, name: 'Olivia Brown', age: 5, class: 'Kindergarten', status: 'Active' },
-    { id: 4, name: 'Noah Davis', age: 4, class: 'Preschool B', status: 'Active' },
-    { id: 5, name: 'Ava Wilson', age: 3, class: 'Toddler A', status: 'Active' },
+const StaffPage = () => {
+  const staffMembers = [
+    { id: 1, name: 'Sarah Mitchell', role: 'Lead Teacher', department: 'Preschool', status: 'Active' },
+    { id: 2, name: 'Michael Chen', role: 'Teacher', department: 'Toddler', status: 'Active' },
+    { id: 3, name: 'Emily Rodriguez', role: 'Assistant Teacher', department: 'Kindergarten', status: 'Active' },
+    { id: 4, name: 'David Thompson', role: 'Teacher', department: 'Preschool', status: 'Active' },
+    { id: 5, name: 'Jessica Lee', role: 'Administrator', department: 'Admin', status: 'Active' },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Students</h1>
-          <p className="text-muted-foreground mt-1">Manage enrolled students</p>
+          <h1 className="text-3xl font-bold text-foreground">Staff</h1>
+          <p className="text-muted-foreground mt-1">Manage teaching and administrative staff</p>
         </div>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Add Student
+          Add Staff Member
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Student Directory</CardTitle>
-          <CardDescription>View and manage all enrolled students</CardDescription>
+          <CardTitle>Staff Directory</CardTitle>
+          <CardDescription>View and manage all staff members</CardDescription>
           <div className="pt-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search students..." className="pl-10" />
+              <Input placeholder="Search staff..." className="pl-10" />
             </div>
           </div>
         </CardHeader>
@@ -50,20 +50,20 @@ const Students = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Class</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Department</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {students.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.name}</TableCell>
-                  <TableCell>{student.age}</TableCell>
-                  <TableCell>{student.class}</TableCell>
+              {staffMembers.map((staff) => (
+                <TableRow key={staff.id}>
+                  <TableCell className="font-medium">{staff.name}</TableCell>
+                  <TableCell>{staff.role}</TableCell>
+                  <TableCell>{staff.department}</TableCell>
                   <TableCell>
-                    <Badge variant="secondary">{student.status}</Badge>
+                    <Badge variant="secondary">{staff.status}</Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm">View</Button>
@@ -78,4 +78,4 @@ const Students = () => {
   );
 };
 
-export default Students;
+export default StaffPage;

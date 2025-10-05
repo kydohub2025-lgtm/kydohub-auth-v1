@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, UserCog, Heart, Calendar } from 'lucide-react';
 
-const Dashboard = () => {
+const DashboardPage = () => {
   const stats = [
     {
       title: 'Total Students',
@@ -109,4 +109,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;
+export default DashboardPage;

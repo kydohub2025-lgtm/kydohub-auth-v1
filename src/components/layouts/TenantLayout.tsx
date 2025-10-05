@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { TenantProvider } from '@/contexts/TenantContext';
+import { useAuth } from '@/context/AuthContext';
+import { TenantProvider } from '@/context/TenantContext';
 import { Sidebar } from '@/components/Sidebar';
 import { Navbar } from '@/components/Navbar';
 
