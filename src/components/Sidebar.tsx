@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import { 
-  Home, School, Users, Heart, DoorOpen, Calendar, 
+  Home, Users, Heart, DoorOpen, Calendar, 
   Clock, Utensils, Settings, MessageSquare, CreditCard, 
   Receipt, DollarSign, GraduationCap, UserPlus, FileText, 
   BarChart3, Menu, X, ChevronDown, ChevronRight
 } from 'lucide-react';
+import kydohubLogo from '@/assets/kydohub-logo.png';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -13,7 +14,7 @@ const menuItems = [
   { title: 'Home', path: '/dashboard', icon: Home },
   { 
     title: 'My School', 
-    icon: School,
+    icon: Users,
     children: [
       { title: 'Students', path: '/students', icon: Users },
       { title: 'Parents', path: '/parents', icon: Heart },
@@ -72,8 +73,8 @@ export const Sidebar = () => {
           {/* Header */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
             <h1 className="text-lg font-bold text-white flex items-center gap-2">
-              <School className="h-5 w-5" />
-              Daycare Nest
+              <img src={kydohubLogo} alt="KydoHub" className="h-6 w-6" />
+              KydoHub
             </h1>
             {isMobile && (
               <Button
