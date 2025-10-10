@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kydohub.com/schemas/me_context.schema.json",
+  "title": "KydoHub Me Context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["tenant", "user", "roles", "permissions", "ui_resources", "abac"],
+  "properties": {
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantId", "name"],
+      "properties": {
+        "tenantId": { "type": "string", "minLength": 1 },
+        "name":     { "type": "string", "minLength": 1 }
+      }
+    },
+    "user": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["userId"],
+      "properties": {
+        "userId":       { "type": "string", "minLength": 1 },
+        "email":        { "type": "string", "format": "email" },
+        "displayName":  { "type": "string" },
+        "avatarUrl":    { "type": "string", "format": "uri" }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "permissions": {
+      "description": "Flattened permission set, e.g. 'students.view', 'attendance.mark'",
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$" },
+      "uniqueItems": true
+    },
+    "ui_resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pages", "actions"],
+      "properties": {
+        "pages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "title", "requires"],
+            "properties": {
+              "id":       { "type": "string", "minLength": 1 },
+              "title":    { "type": "string", "minLength": 1 },
+              "requires": {
+                "type": "array",
+                "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$" },
+                "uniqueItems": true
+              },
+              "icon":     { "type": "string" }, 
+              "path":     { "type": "string" }  
+            }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "requires"],
+            "properties": {
+              "id":       { "type": "string", "minLength": 1 },
+              "requires": {
+                "type": "array",
+                "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$" },
+                "uniqueItems": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "abac": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rooms", "guardianOf"],
+      "properties": {
+        "rooms": {
+          "description": "Room IDs the staff member can access; empty for parents/admin if not applicable",
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "guardianOf": {
+          "description": "Student IDs the parent/guardian can access; empty for staff",
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "meta": {
+      "description": "Optional metadata for clients (non-authoritative).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ev": { "type": "integer", "minimum": 0 },
+        "generatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "examples": [
+    {
+      "tenant": { "tenantId": "t1", "name": "Sunrise Daycare" },
+      "user":   { "userId": "u123", "email": "teacher@sunrise.com", "displayName": "Alex" },
+      "roles": ["teacher"],
+      "permissions": ["students.list_room", "students.view", "attendance.mark", "messages.send"],
+      "ui_resources": {
+        "pages": [
+          { "id": "dashboard",  "title": "Dashboard",  "requires": [] },
+          { "id": "students",   "title": "Students",   "requires": ["students.view"], "path": "/students" },
+          { "id": "attendance", "title": "Attendance", "requires": ["attendance.mark"], "path": "/attendance" }
+        ],
+        "actions": [
+          { "id": "student.view",     "requires": ["students.view"] },
+          { "id": "attendance.mark",  "requires": ["attendance.mark"] }
+        ]
+      },
+      "abac": {
+        "rooms": ["room-a", "room-b"],
+        "guardianOf": []
+      },
+      "meta": { "ev": 7, "generatedAt": "2025-10-10T10:00:00Z" }
+    }
+  ]
+}

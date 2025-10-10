@@ -1,0 +1,278 @@
+openapi: 3.0.3
+info:
+  title: KydoHub Auth & Context API
+  version: 0.1.0
+  description: >
+    Contracts for dual-mode authentication (web cookies vs mobile bearer)
+    and the user context used by the frontend to render pages/actions.
+
+servers:
+  - url: https://api.kydohub.com
+
+tags:
+  - name: auth
+    description: Authentication & session endpoints
+  - name: me
+    description: User context for the active tenant
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    XClient:
+      in: header
+      name: X-Client
+      required: false
+      schema: { type: string, enum: [web, mobile] }
+      description: >
+        Indicates client mode. `web` → cookie transport. `mobile` → JSON tokens.
+        If omitted, server may infer from presence of cookies vs Authorization header.
+    XCsrfToken:
+      in: header
+      name: X-CSRF-Token
+      required: false
+      schema: { type: string }
+      description: CSRF double-submit token for state-changing web requests.
+    Authorization:
+      in: header
+      name: Authorization
+      required: false
+      schema: { type: string, example: "Bearer <access-jwt>" }
+      description: Bearer access token for mobile / non-browser clients.
+
+  schemas:
+    ErrorEnvelope:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code]
+          properties:
+            code:
+              type: string
+              enum: [EXPIRED, EV_OUTDATED, PERMISSION_DENIED, INVALID_TOKEN, TENANT_REQUIRED, CSRF_FAILED]
+            message:
+              type: string
+      example: { error: { code: EV_OUTDATED, message: "Permissions updated; please refresh" } }
+
+    DeviceInfo:
+      type: object
+      required: [client]
+      properties:
+        client: { type: string, enum: [web, mobile] }
+        name: { type: string, description: Optional display name (e.g., "KydoHub Web" / "iPhone 15") }
+        fingerprint: { type: string, description: Optional device fingerprint or install id }
+
+    TokenExchangeRequest:
+      type: object
+      required: [provider, token, device]
+      properties:
+        provider:
+          type: string
+          enum: [supabase]
+        token:
+          type: string
+          description: Supabase access token obtained client-side
+        tenantHint:
+          type: string
+          description: Optional tenantId or tenant code to prefer when multiple memberships exist
+        device:
+          $ref: '#/components/schemas/DeviceInfo'
+
+    MobileAuthResponse:
+      type: object
+      required: [tokenType, access, expiresIn, refresh]
+      properties:
+        tokenType: { type: string, example: Bearer }
+        access: { type: string, description: Short-lived access JWT }
+        expiresIn: { type: integer, example: 900 }
+        refresh: { type: string, description: Opaque refresh token (rotate on refresh) }
+        tenant:
+          type: object
+          properties:
+            tenantId: { type: string }
+            name: { type: string }
+
+    TenantChoice:
+      type: object
+      properties:
+        tenants:
+          type: array
+          items:
+            type: object
+            properties:
+              tenantId: { type: string }
+              name: { type: string }
+
+    MeContext:
+      $ref: 'me_context_schema.json'  # relative reference within the same folder
+
+paths:
+  /auth/exchange:
+    post:
+      tags: [auth]
+      summary: Exchange Supabase token for a KydoHub session
+      description: |
+        Dual-mode:
+        - **Web** (X-Client:web): sets session cookies and returns **204 No Content**.
+        - **Mobile** (X-Client:mobile): returns JSON tokens (**200 OK**) with access/refresh.
+        If the user belongs to multiple tenants and none selected, returns **209 Tenant Choice** with a tenant list.
+      parameters:
+        - $ref: '#/components/parameters/XClient'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TokenExchangeRequest' }
+            examples:
+              web:
+                summary: Web exchange
+                value: { provider: supabase, token: "supabase.jwt", tenantHint: "t1", device: { client: web, name: "KydoHub Web" } }
+              mobile:
+                summary: Mobile exchange
+                value: { provider: supabase, token: "supabase.jwt", device: { client: mobile, name: "iPhone 15" } }
+      responses:
+        '204':
+          description: Web success; HttpOnly cookies set (kydo_sess, kydo_refresh, kydo_csrf)
+        '200':
+          description: Mobile success; tokens returned
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MobileAuthResponse' }
+        '209':
+          description: Tenant selection required
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantChoice' }
+              example:
+                tenants:
+                  - { tenantId: "t1", name: "Sunrise Daycare" }
+                  - { tenantId: "t2", name: "Bright Kids" }
+        '400':
+          description: Invalid token or unsupported provider
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '401':
+          description: Authentication failed or permission denied
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Rotate access (and possibly refresh) tokens
+      description: |
+        Web: reads HttpOnly `kydo_refresh` cookie and returns **204**, reissuing cookies.
+        Mobile: accepts `{refresh}` in body and returns **200** with new tokens.
+      parameters:
+        - $ref: '#/components/parameters/XClient'
+        - $ref: '#/components/parameters/XCsrfToken'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh: { type: string, description: Mobile only }
+            examples:
+              mobile:
+                value: { refresh: "opaque-refresh" }
+      responses:
+        '204':
+          description: Web success; cookies rotated (kydo_sess, kydo_refresh, kydo_csrf)
+        '200':
+          description: Mobile success; tokens rotated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MobileAuthResponse' }
+        '401':
+          description: Expired or invalid refresh
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '403':
+          description: CSRF validation failed (web)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Invalidate current session
+      description: >
+        Adds current JTI to blocklist and clears cookies for web.
+        Mobile clients should delete stored tokens.
+      parameters:
+        - $ref: '#/components/parameters/XClient'
+        - $ref: '#/components/parameters/XCsrfToken'
+      responses:
+        '204':
+          description: Logout successful; cookies cleared (web)
+        '401':
+          description: No active session
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '403':
+          description: CSRF validation failed (web)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /auth/switch:
+    post:
+      tags: [auth]
+      summary: Switch active tenant (multi-tenant users)
+      description: >
+        Web: re-mints session cookies bound to the selected tenant and returns **204**.
+        Mobile: returns **200** with new tokens bound to the tenant.
+      parameters:
+        - $ref: '#/components/parameters/XClient'
+        - $ref: '#/components/parameters/XCsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId]
+              properties:
+                tenantId: { type: string }
+      responses:
+        '204':
+          description: Web success; cookies reminted for the chosen tenant
+        '200':
+          description: Mobile success; tokens issued for chosen tenant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MobileAuthResponse' }
+        '401':
+          description: Not authenticated or tenant not permitted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+        '403':
+          description: CSRF validation failed (web)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+
+  /me/context:
+    get:
+      tags: [me]
+      summary: Get the user’s authorization context for the active tenant
+      description: >
+        Returns roles, flattened permissions, server-owned `ui_resources` (pages/actions),
+        and ABAC hints (rooms, guardianOf). Used by the frontend to build navigation and gate controls.
+      parameters:
+        - $ref: '#/components/parameters/Authorization'
+        - $ref: '#/components/parameters/XClient'
+      security:

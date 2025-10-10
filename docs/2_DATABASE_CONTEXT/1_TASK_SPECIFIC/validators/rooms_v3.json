@@ -1,0 +1,134 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": [
+      "tenantId",
+      "tenantCode",
+      "schemaVersion",
+      "room",
+      "audit"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "tenantId": { "bsonType": "objectId" },
+      "tenantCode": { "bsonType": "string", "minLength": 1 },
+      "schemaVersion": { "bsonType": "int", "minimum": 1 },
+
+      "room": {
+        "bsonType": "object",
+        "required": [
+          "name",
+          "status",
+          "minAgeMonths",
+          "maxAgeMonths",
+          "capacity",
+          "ratio",
+          "schedule"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "bsonType": "string", "minLength": 1 },
+          "code": { "bsonType": ["string", "null"] },
+          "type": { "enum": ["classroom", "playarea", "nap", "other"] },
+          "status": { "enum": ["active", "inactive", "archived"] },
+          "minAgeMonths": { "bsonType": "int", "minimum": 0 },
+          "maxAgeMonths": { "bsonType": "int", "minimum": 0 },
+
+          "capacity": {
+            "bsonType": "object",
+            "required": ["maxStudents"],
+            "additionalProperties": false,
+            "properties": {
+              "maxStudents": { "bsonType": "int", "minimum": 1 }
+            }
+          },
+
+          "ratio": {
+            "bsonType": "object",
+            "required": ["studentsPerStaff"],
+            "additionalProperties": false,
+            "properties": {
+              "studentsPerStaff": { "bsonType": "int", "minimum": 1 }
+            }
+          },
+
+          "schedule": {
+            "bsonType": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mon": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "tue": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "wed": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "thu": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "fri": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sat": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sun": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" }
+            }
+          },
+
+          "location": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "building": { "bsonType": ["string", "null"] },
+              "floor": { "bsonType": ["string", "null"] },
+              "notes": { "bsonType": ["string", "null"] }
+            }
+          },
+
+          "tags": { "bsonType": ["array", "null"], "items": { "bsonType": "string" } },
+          "notes": { "bsonType": ["string", "null"] }
+        }
+      },
+
+      "assignments": {
+        "bsonType": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "staff": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "required": ["staffId", "role", "effectiveFrom"],
+              "additionalProperties": false,
+              "properties": {
+                "staffId": { "bsonType": ["objectId", "string"] },
+                "role": { "enum": ["lead", "assistant", "substitute"] },
+                "effectiveFrom": { "bsonType": "date" },
+                "effectiveTo": { "bsonType": ["date", "null"] },
+                "isPrimary": { "bsonType": ["bool", "null"] }
+              }
+            }
+          },
+          "students": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "required": ["studentId", "status", "effectiveFrom"],
+              "additionalProperties": false,
+              "properties": {
+                "studentId": { "bsonType": ["objectId", "string"] },
+                "status": { "enum": ["enrolled", "waitlisted", "trial", "exited"] },
+                "effectiveFrom": { "bsonType": "date" },
+                "effectiveTo": { "bsonType": ["date", "null"] }
+              }
+            }
+          }
+        }
+      },
+
+      "audit": {
+        "bsonType": "object",
+        "required": ["createdAt", "createdBy", "updatedAt", "updatedBy"],
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": { "bsonType": "date" },
+          "createdBy": { "bsonType": "string" },
+          "updatedAt": { "bsonType": "date" },
+          "updatedBy": { "bsonType": "string" },
+          "deletedAt": { "bsonType": ["date", "null"] }
+        }
+      }
+    }
+  }
+}

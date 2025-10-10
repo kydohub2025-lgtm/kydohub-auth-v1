@@ -1,0 +1,491 @@
+```json
+{
+  "$and": [
+    {
+      "$jsonSchema": {
+        "bsonType": "object",
+        "required": [
+          "tenantId",
+          "tenantCode",
+          "schemaVersion",
+          "school",
+          "status",
+          "createdAt",
+          "createdBy",
+          "updatedAt",
+          "updatedBy"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "tenantId": { "bsonType": "objectId" },
+          "tenantCode": { "bsonType": "string", "minLength": 1 },
+          "schemaVersion": { "bsonType": "int", "minimum": 1 },
+
+          "school": {
+            "bsonType": "object",
+            "required": ["name", "timeZone", "branding", "license"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "bsonType": "string", "minLength": 1 },
+              "aliases": { "bsonType": ["array", "null"], "items": { "bsonType": "string" } },
+              "address": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "line1": { "bsonType": ["string", "null"] },
+                  "line2": { "bsonType": ["string", "null"] },
+                  "city": { "bsonType": ["string", "null"] },
+                  "state": { "bsonType": ["string", "null"] },
+                  "zipCode": { "bsonType": ["string", "null"] },
+                  "country": { "bsonType": ["string", "null"] }
+                }
+              },
+              "website": { "bsonType": ["string", "null"] },
+              "timeZone": { "bsonType": "string", "pattern": "^[A-Za-z]+\\/[A-Za-z_]+(?:\\/[A-Za-z_]+)?$" },
+              "branding": {
+                "bsonType": "object",
+                "required": ["logoUrl"],
+                "additionalProperties": false,
+                "properties": {
+                  "logoUrl": { "bsonType": "string" },
+                  "primaryColor": { "bsonType": ["string", "null"], "pattern": "^#?[0-9A-Fa-f]{6}$" },
+                  "secondaryColor": { "bsonType": ["string", "null"], "pattern": "^#?[0-9A-Fa-f]{6}$" }
+                }
+              },
+              "license": {
+                "bsonType": "object",
+                "required": ["number", "capacity", "issuer", "issueDate", "expiryDate"],
+                "additionalProperties": false,
+                "properties": {
+                  "number": { "bsonType": "string", "minLength": 1 },
+                  "capacity": { "bsonType": "int", "minimum": 0 },
+                  "issuer": { "bsonType": "string", "minLength": 1 },
+                  "issueDate": { "bsonType": "date" },
+                  "expiryDate": { "bsonType": "date" },
+                  "url": { "bsonType": ["string", "null"] }
+                }
+              },
+              "desiredCapacity": { "bsonType": ["int", "null"], "minimum": 0 }
+            }
+          },
+
+          "contacts": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "primaryContact": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "name": { "bsonType": ["string", "null"] },
+                  "role": { "bsonType": ["string", "null"] },
+                  "email": { "bsonType": ["string", "null"] },
+                  "phone": { "bsonType": ["string", "null"] }
+                }
+              },
+              "support": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "email": { "bsonType": ["string", "null"] },
+                  "phone": { "bsonType": ["string", "null"] }
+                }
+              },
+              "smsNumber": { "bsonType": ["string", "null"] }
+            }
+          },
+
+          "hours": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "mon": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "tue": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "wed": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "thu": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "fri": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sat": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sun": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" }
+            }
+          },
+
+          "closures": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "additionalProperties": false,
+              "properties": {
+                "date": { "bsonType": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+                "reason": { "bsonType": ["string", "null"] }
+              }
+            }
+          },
+
+          "programs": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "required": ["name", "minAgeMonths", "maxAgeMonths", "tuition", "ratio"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "bsonType": "string", "minLength": 1 },
+                "minAgeMonths": { "bsonType": "int", "minimum": 0 },
+                "maxAgeMonths": { "bsonType": "int", "minimum": 0 },
+                "dailyCap": { "bsonType": ["int", "null"], "minimum": 0 },
+                "tuition": {
+                  "bsonType": "object",
+                  "required": ["period", "amount", "currency"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "period": { "enum": ["weekly", "monthly"] },
+                    "amount": { "bsonType": "double" },
+                    "currency": { "bsonType": "string", "pattern": "^[A-Z]{3}$" }
+                  }
+                },
+                "ratio": {
+                  "bsonType": "object",
+                  "required": ["staff", "children"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "staff": { "bsonType": "int", "minimum": 1 },
+                    "children": { "bsonType": "int", "minimum": 1 }
+                  }
+                }
+              }
+            }
+          },
+
+          "billing": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "currency": { "bsonType": "string", "pattern": "^[A-Z]{3}$" },
+              "invoicePrefix": { "bsonType": ["string", "null"] },
+              "netTermsDays": { "bsonType": ["int", "null"], "minimum": 0 },
+              "lateFeePolicy": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "type": { "enum": ["flat", "percent", null] },
+                  "value": { "bsonType": ["double", "int", "null"], "minimum": 0 }
+                }
+              },
+              "discounts": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "siblingPercent": { "bsonType": ["double", "int", "null"], "minimum": 0, "maximum": 100 },
+                  "staffPercent": { "bsonType": ["double", "int", "null"], "minimum": 0, "maximum": 100 }
+                }
+              },
+              "depositRequired": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": { "bsonType": ["bool", "null"] },
+                  "amount": { "bsonType": ["double", "int", "null"], "minimum": 0 }
+                }
+              }
+            }
+          },
+
+          "tax": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "regime": { "bsonType": ["string", "null"] },
+              "registrationNumber": { "bsonType": ["string", "null"] },
+              "rates": {
+                "bsonType": ["array", "null"],
+                "items": {
+                  "bsonType": "object",
+                  "required": ["name", "percent", "appliesTo"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "bsonType": "string", "minLength": 1 },
+                    "percent": { "bsonType": ["double", "int"], "minimum": 0, "maximum": 100 },
+                    "appliesTo": { "enum": ["tuition", "meals", "all"] }
+                  }
+                }
+              }
+            }
+          },
+
+          "paymentProviders": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "stripe": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "accountId": { "bsonType": ["string", "null"] }
+                }
+              },
+              "ach": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": { "bsonType": ["bool", "null"] }
+                }
+              },
+              "cashAllowed": { "bsonType": ["bool", "null"] }
+            }
+          },
+
+          "enrollmentPolicy": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "minAgeMonths": { "bsonType": ["int", "null"], "minimum": 0 },
+              "maxAgeMonths": { "bsonType": ["int", "null"], "minimum": 0 },
+              "documentsRequired": { "bsonType": ["array", "null"], "items": { "bsonType": "string" } },
+              "trialDays": { "bsonType": ["int", "null"], "minimum": 0 },
+              "withdrawalNoticeDays": { "bsonType": ["int", "null"], "minimum": 0 }
+            }
+          },
+
+          "pickupPolicy": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "codeType": { "enum": ["guardian", "student", null] },
+              "photoIdRequired": { "bsonType": ["bool", "null"] },
+              "latePickupFee": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "afterMinutes": { "bsonType": ["int", "null"], "minimum": 0 },
+                  "per15min": { "bsonType": ["double", "int", "null"], "minimum": 0 }
+                }
+              }
+            }
+          },
+
+          "attendance": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "methods": { "bsonType": ["array", "null"], "items": { "enum": ["kiosk_pin", "qr", "rfid", "mobile"] } },
+              "gracePeriodMin": { "bsonType": ["int", "null"], "minimum": 0 },
+              "allowBackdated": { "bsonType": ["bool", "null"] }
+            }
+          },
+
+          "health": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "medicationAdminPolicyUrl": { "bsonType": ["string", "null"] },
+              "incidentReportTemplateId": { "bsonType": ["string", "null"] },
+              "allergyStandardCodes": { "bsonType": ["bool", "null"] }
+            }
+          },
+
+          "consentsDefault": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "photo": { "bsonType": ["bool", "null"] },
+              "sunscreen": { "bsonType": ["bool", "null"] },
+              "walkingTrips": { "bsonType": ["bool", "null"] }
+            }
+          },
+
+          "meals": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "provider": { "enum": ["inhouse", "vendor", null] },
+              "menuUrl": { "bsonType": ["string", "null"] }
+            }
+          },
+
+          "transport": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "busRoutes": {
+                "bsonType": ["array", "null"],
+                "items": {
+                  "bsonType": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": { "bsonType": ["string", "null"] },
+                    "stops": {
+                      "bsonType": ["array", "null"],
+                      "items": {
+                        "bsonType": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "name": { "bsonType": ["string", "null"] },
+                          "time": { "bsonType": ["string", "null"], "pattern": "^\\d{2}:\\d{2}$" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+
+          "geo": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "lat": { "bsonType": ["double", "int", "null"] },
+              "lng": { "bsonType": ["double", "int", "null"] },
+              "serviceRadiusKm": { "bsonType": ["double", "int", "null"], "minimum": 0 }
+            }
+          },
+
+          "notifications": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "emailFrom": { "bsonType": ["string", "null"] },
+              "replyTo": { "bsonType": ["string", "null"] },
+              "channels": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "email": { "bsonType": ["bool", "null"] },
+                  "sms": { "bsonType": ["bool", "null"] },
+                  "push": { "bsonType": ["bool", "null"] }
+                }
+              },
+              "templates": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "invoiceId": { "bsonType": ["string", "null"] },
+                  "incidentId": { "bsonType": ["string", "null"] }
+                }
+              }
+            }
+          },
+
+          "language": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "default": { "bsonType": ["string", "null"], "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$" },
+              "supported": { "bsonType": ["array", "null"], "items": { "bsonType": "string", "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$" } }
+            }
+          },
+
+          "integrations": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "idp": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "provider": { "bsonType": ["string", "null"] },
+                  "tenant": { "bsonType": ["string", "null"] },
+                  "appId": { "bsonType": ["string", "null"] }
+                }
+              },
+              "storage": {
+                "bsonType": ["object", "null"],
+                "additionalProperties": false,
+                "properties": {
+                  "bucket": { "bsonType": ["string", "null"] },
+                  "basePath": { "bsonType": ["string", "null"] }
+                }
+              }
+            }
+          },
+
+          "security": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "mfaRequiredForStaff": { "bsonType": ["bool", "null"] },
+              "sessionTimeoutMin": { "bsonType": ["int", "null"], "minimum": 0 }
+            }
+          },
+
+          "dataRetention": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "incidentYears": { "bsonType": ["int", "null"], "minimum": 0 },
+              "logsDays": { "bsonType": ["int", "null"], "minimum": 0 }
+            }
+          },
+
+          "documents": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "enum": ["license", "policy", "handbook", null] },
+                "url": { "bsonType": ["string", "null"] },
+                "uploadedAt": { "bsonType": ["date", "null"] }
+              }
+            }
+          },
+
+          "features": { "bsonType": ["object", "null"], "additionalProperties": true },
+          "custom": { "bsonType": ["object", "null"], "additionalProperties": true },
+
+          "status": { "enum": ["active", "inactive", "archived"] },
+
+          "createdBy": { "bsonType": "string" },
+          "updatedBy": { "bsonType": "string" },
+          "createdAt": { "bsonType": "date" },
+          "updatedAt": { "bsonType": "date" }
+        }
+      }
+    },
+    {
+      "$expr": {
+        "$and": [
+          {
+            "$or": [
+              { "$eq": [ { "$type": "$school.desiredCapacity" }, "missing" ] },
+              { "$lte": [ "$school.desiredCapacity", "$school.license.capacity" ] }
+            ]
+          },
+          {
+            "$or": [
+              { "$eq": [ { "$type": "$programs" }, "missing" ] },
+              {
+                "$allElementsTrue": {
+                  "$map": {
+                    "input": "$programs",
+                    "as": "p",
+                    "in": { "$lt": [ "$$p.minAgeMonths", "$$p.maxAgeMonths" ] }
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "$or": [
+              { "$eq": [ { "$type": "$tax.rates" }, "missing" ] },
+              {
+                "$allElementsTrue": {
+                  "$map": {
+                    "input": "$tax.rates",
+                    "as": "r",
+                    "in": {
+                      "$and": [
+                        { "$gte": [ "$$r.percent", 0 ] },
+                        { "$lte": [ "$$r.percent", 100 ] }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
+```

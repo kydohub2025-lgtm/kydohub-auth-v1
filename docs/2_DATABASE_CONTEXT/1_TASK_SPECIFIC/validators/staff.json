@@ -1,0 +1,158 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": [
+      "tenantId",
+      "tenantCode",
+      "schemaVersion",
+      "profile",
+      "employment",
+      "audit"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "tenantId": { "bsonType": "objectId" },
+      "tenantCode": { "bsonType": "string", "minLength": 1 },
+      "schemaVersion": { "bsonType": "int", "minimum": 1 },
+
+      "profile": {
+        "bsonType": "object",
+        "required": ["name", "status"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "bsonType": "object",
+            "required": ["first", "last"],
+            "additionalProperties": false,
+            "properties": {
+              "first": { "bsonType": "string", "minLength": 1 },
+              "last": { "bsonType": "string", "minLength": 1 },
+              "preferred": { "bsonType": ["string", "null"] }
+            }
+          },
+          "email": { "bsonType": ["string", "null"] },
+          "phones": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": { "enum": ["mobile", "home", "work", null] },
+                "number": { "bsonType": ["string", "null"] },
+                "isPrimary": { "bsonType": ["bool", "null"] }
+              }
+            }
+          },
+          "photoUrl": { "bsonType": ["string", "null"] },
+          "status": { "enum": ["active", "inactive", "terminated", "on_leave"] }
+        }
+      },
+
+      "employment": {
+        "bsonType": "object",
+        "required": ["position", "hireDate"],
+        "additionalProperties": false,
+        "properties": {
+          "position": { "bsonType": "string", "minLength": 1 },
+          "role": { "enum": ["teacher", "assistant", "administrator", "owner", "other", null] },
+          "hireDate": { "bsonType": "date" },
+          "terminationDate": { "bsonType": ["date", "null"] },
+          "workSchedule": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "mon": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "tue": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "wed": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "thu": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "fri": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sat": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sun": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" }
+            }
+          },
+          "roomAssignments": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "additionalProperties": false,
+              "properties": {
+                "roomId": { "bsonType": ["objectId", "string"] },
+                "role": { "enum": ["lead", "assistant", "substitute", null] },
+                "effectiveFrom": { "bsonType": ["date", "null"] },
+                "effectiveTo": { "bsonType": ["date", "null"] }
+              }
+            }
+          },
+          "payroll": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "type": { "enum": ["salary", "hourly", null] },
+              "amount": { "bsonType": ["double", "int", "null"], "minimum": 0 },
+              "currency": { "bsonType": ["string", "null"], "pattern": "^[A-Z]{3}$" },
+              "frequency": { "enum": ["weekly", "biweekly", "monthly", null] }
+            }
+          }
+        }
+      },
+
+      "account": {
+        "bsonType": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "enum": ["invited", "active", "disabled", null] },
+          "role": { "enum": ["staff", "admin", "owner", null] },
+          "lastLoginAt": { "bsonType": ["date", "null"] },
+          "inviteSentAt": { "bsonType": ["date", "null"] },
+          "verifiedEmail": { "bsonType": ["bool", "null"] },
+          "authProvider": { "bsonType": ["string", "null"] }
+        }
+      },
+
+      "emergencyContacts": {
+        "bsonType": ["array", "null"],
+        "items": {
+          "bsonType": "object",
+          "required": ["name", "phone"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "bsonType": "string", "minLength": 1 },
+            "relation": { "bsonType": ["string", "null"] },
+            "phone": { "bsonType": "string", "minLength": 3 }
+          }
+        }
+      },
+
+      "documents": {
+        "bsonType": ["array", "null"],
+        "items": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "enum": ["id_proof", "qualification", "contract", "certificate", null] },
+            "url": { "bsonType": ["string", "null"] },
+            "uploadedAt": { "bsonType": ["date", "null"] },
+            "expiryDate": { "bsonType": ["date", "null"] }
+          }
+        }
+      },
+
+      "custom": { "bsonType": ["object", "null"], "additionalProperties": true },
+
+      "audit": {
+        "bsonType": "object",
+        "required": ["createdAt", "createdBy", "updatedAt", "updatedBy"],
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": { "bsonType": "date" },
+          "createdBy": { "bsonType": "string" },
+          "updatedAt": { "bsonType": "date" },
+          "updatedBy": { "bsonType": "string" },
+          "deleted": { "bsonType": ["bool", "null"] },
+          "deletedAt": { "bsonType": ["date", "null"] },
+          "deletedBy": { "bsonType": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

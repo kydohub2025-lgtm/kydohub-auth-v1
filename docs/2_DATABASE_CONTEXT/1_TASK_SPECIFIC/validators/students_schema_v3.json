@@ -1,0 +1,164 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": [
+      "tenantId",
+      "tenantCode",
+      "schemaVersion",
+      "student",
+      "school",
+      "audit"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "tenantId": { "bsonType": "objectId" },
+      "tenantCode": { "bsonType": "string", "minLength": 1 },
+      "schemaVersion": { "bsonType": "int", "minimum": 1 },
+
+      "student": {
+        "bsonType": "object",
+        "required": ["name", "gender", "birthday"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "bsonType": "object",
+            "required": ["first", "last"],
+            "additionalProperties": false,
+            "properties": {
+              "first": { "bsonType": "string", "minLength": 1 },
+              "last": { "bsonType": "string", "minLength": 1 },
+              "preferred": { "bsonType": ["string", "null"] }
+            }
+          },
+          "gender": { "enum": ["male", "female", "nonbinary", "unspecified"] },
+          "birthday": {
+            "bsonType": "object",
+            "required": ["year", "month", "day"],
+            "additionalProperties": false,
+            "properties": {
+              "year": { "bsonType": "int", "minimum": 1900 },
+              "month": { "bsonType": "int", "minimum": 1, "maximum": 12 },
+              "day": { "bsonType": "int", "minimum": 1, "maximum": 31 }
+            }
+          },
+          "birthdayDate": { "bsonType": ["date", "null"] },
+          "photoUrl": { "bsonType": ["string", "null"] },
+          "language": { "bsonType": ["string", "null"], "pattern": "^[a-z]{2}(?:-[A-Z]{2})?$" }
+        }
+      },
+
+      "school": {
+        "bsonType": "object",
+        "required": ["status"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "enum": ["active", "inactive", "archived", "graduated"] },
+          "studentId": { "bsonType": ["string", "null"] },
+          "program": { "bsonType": ["string", "null"] },
+          "roomId": { "bsonType": ["objectId", "null"] },
+          "schedule": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "mon": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "tue": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "wed": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "thu": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "fri": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sat": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" },
+              "sun": { "bsonType": ["string", "null"], "pattern": "^(\\d{2}:\\d{2}-\\d{2}:\\d{2})$" }
+            }
+          }
+        }
+      },
+
+      "medical": {
+        "bsonType": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "allergies": { "bsonType": ["array", "null"], "items": { "bsonType": "string" } },
+          "conditions": { "bsonType": ["array", "null"], "items": { "bsonType": "string" } },
+          "medications": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "required": ["name"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "bsonType": "string" },
+                "dosage": { "bsonType": ["string", "null"] },
+                "notes": { "bsonType": ["string", "null"] }
+              }
+            }
+          },
+          "immunization": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "recordUrl": { "bsonType": ["string", "null"] },
+              "lastUpdated": { "bsonType": ["date", "null"] }
+            }
+          }
+        }
+      },
+
+      "contactsLite": {
+        "bsonType": ["array", "null"],
+        "items": {
+          "bsonType": "object",
+          "required": ["contactId", "role", "name"],
+          "additionalProperties": false,
+          "properties": {
+            "contactId": { "bsonType": ["objectId", "string"] },
+            "role": { "enum": ["guardian", "family", "pickup"] },
+            "name": {
+              "bsonType": "object",
+              "required": ["first", "last"],
+              "properties": {
+                "first": { "bsonType": "string" },
+                "last": { "bsonType": "string" }
+              }
+            },
+            "email": { "bsonType": ["string", "null"] },
+            "phone": { "bsonType": ["string", "null"] },
+            "inviteStatus": { "enum": ["none", "invited", "accepted", "revoked", null] },
+            "canPickup": { "bsonType": ["bool", "null"] },
+            "effectivePickupCode": { "bsonType": ["string", "null"] },
+            "isPayer": { "bsonType": ["bool", "null"] }
+          }
+        }
+      },
+
+      "attachments": {
+        "bsonType": ["array", "null"],
+        "items": {
+          "bsonType": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "bsonType": ["string", "null"] },
+            "url": { "bsonType": ["string", "null"] },
+            "uploadedAt": { "bsonType": ["date", "null"] },
+            "uploadedBy": { "bsonType": ["string", "null"] }
+          }
+        }
+      },
+
+      "custom": { "bsonType": ["object", "null"], "additionalProperties": true },
+
+      "audit": {
+        "bsonType": "object",
+        "required": ["createdAt", "createdBy", "updatedAt", "updatedBy"],
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": { "bsonType": "date" },
+          "createdBy": { "bsonType": "string" },
+          "updatedAt": { "bsonType": "date" },
+          "updatedBy": { "bsonType": "string" },
+          "deleted": { "bsonType": ["bool", "null"] },
+          "deletedAt": { "bsonType": ["date", "null"] },
+          "deletedBy": { "bsonType": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "$jsonSchema": {
+    "bsonType": "object",
+    "required": [
+      "tenantId",
+      "tenantCode",
+      "schemaVersion",
+      "profile",
+      "audit"
+    ],
+    "additionalProperties": false,
+    "properties": {
+      "tenantId": { "bsonType": "objectId" },
+      "tenantCode": { "bsonType": "string", "minLength": 1 },
+      "schemaVersion": { "bsonType": "int", "minimum": 1 },
+
+      "profile": {
+        "bsonType": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "bsonType": "object",
+            "required": ["first", "last"],
+            "additionalProperties": false,
+            "properties": {
+              "first": { "bsonType": "string", "minLength": 1 },
+              "last": { "bsonType": "string", "minLength": 1 },
+              "preferred": { "bsonType": ["string", "null"] }
+            }
+          },
+          "email": { "bsonType": ["string", "null"] },
+          "phones": {
+            "bsonType": ["array", "null"],
+            "items": {
+              "bsonType": "object",
+              "additionalProperties": false,
+              "properties": {
+                "type": { "enum": ["mobile", "home", "work", null] },
+                "number": { "bsonType": ["string", "null"] },
+                "isPrimary": { "bsonType": ["bool", "null"] }
+              }
+            }
+          },
+          "address": {
+            "bsonType": ["object", "null"],
+            "additionalProperties": false,
+            "properties": {
+              "line1": { "bsonType": ["string", "null"] },
+              "line2": { "bsonType": ["string", "null"] },
+              "city": { "bsonType": ["string", "null"] },
+              "state": { "bsonType": ["string", "null"] },
+              "zipCode": { "bsonType": ["string", "null"] },
+              "country": { "bsonType": ["string", "null"] }
+            }
+          },
+          "notes": { "bsonType": ["string", "null"] }
+        }
+      },
+
+      "account": {
+        "bsonType": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "status": { "enum": ["invited", "active", "disabled", null] },
+          "role": { "enum": ["guardian", "staff", "none", null] },
+          "lastLoginAt": { "bsonType": ["date", "null"] },
+          "inviteSentAt": { "bsonType": ["date", "null"] },
+          "verifiedEmail": { "bsonType": ["bool", "null"] },
+          "authProvider": { "bsonType": ["string", "null"] }
+        }
+      },
+
+      "pickup": {
+        "bsonType": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "defaultCode": { "bsonType": ["string", "null"] },
+          "photoUrl": { "bsonType": ["string", "null"] },
+          "idRequired": { "bsonType": ["bool", "null"] }
+        }
+      },
+
+      "billing": {
+        "bsonType": ["object", "null"],
+        "additionalProperties": false,
+        "properties": {
+          "payerType": { "enum": ["guardian", "organization", null] },
+          "preferredPaymentMethod": { "enum": ["credit_card", "ach", "cash", null] },
+          "notes": { "bsonType": ["string", "null"] }
+        }
+      },
+
+      "custom": { "bsonType": ["object", "null"], "additionalProperties": true },
+
+      "audit": {
+        "bsonType": "object",
+        "required": ["createdAt", "createdBy", "updatedAt", "updatedBy"],
+        "additionalProperties": false,
+        "properties": {
+          "createdAt": { "bsonType": "date" },
+          "createdBy": { "bsonType": "string" },
+          "updatedAt": { "bsonType": "date" },
+          "updatedBy": { "bsonType": "string" },
+          "deleted": { "bsonType": ["bool", "null"] },
+          "deletedAt": { "bsonType": ["date", "null"] },
+          "deletedBy": { "bsonType": ["string", "null"] }
+        }
+      }
+    }
+  }
+}
