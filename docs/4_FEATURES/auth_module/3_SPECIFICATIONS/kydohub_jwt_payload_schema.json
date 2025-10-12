@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kydohub.com/schemas/kydohub_jwt_payload.schema.json",
+  "title": "KydoHub Session JWT (Access Token) Payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sub", "tid", "ev", "jti", "iat", "exp"],
+  "properties": {
+    "sub": {
+      "type": "string",
+      "description": "User ID from Supabase (auth identity)."
+    },
+    "tid": {
+      "type": "string",
+      "description": "Active tenant ID (authorization context)."
+    },
+    "roles": {
+      "type": "array",
+      "description": "Optional: role names for this tenant. Treated as a hint; server still loads roles from DB.",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "ev": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Epoch/version of the user's permission state used for EV freshness checks."
+    },
+    "jti": {
+      "type": "string",
+      "description": "Unique token identifier (UUID recommended) for blocklisting/revocation."
+    },
+    "iat": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Issued-at (Unix timestamp, seconds)."
+    },
+    "exp": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Expiration time (Unix timestamp, seconds)."
+    },
+    "iss": {
+      "type": "string",
+      "description": "Issuer identifier, e.g. 'kydohub-api'."
+    },
+    "aud": {
+      "type": "string",
+      "description": "Audience identifier, e.g. 'kydohub-app'."
+    },
+    "client": {
+      "type": "string",
+      "enum": ["web", "mobile"],
+      "description": "Optional client mode tag used for telemetry and policy nuances."
+    },
+    "attrs": {
+      "type": "object",
+      "description": "Optional ABAC hints (not authoritative). Server enforces ABAC from DB.",
+      "additionalProperties": false,
+      "properties": {
+        "rooms": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "Staff visibility scope by room ID."
+        },
+        "guardianOf": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true,
+          "description": "Parent visibility scope by student ID."
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "sub": "sbp_2c1f45b19",
+      "tid": "t1",
+      "roles": ["teacher"],
+      "ev": 12,
+      "jti": "fa5d8a4c-9a17-4d3f-9b35-1c2d3e4f5a6b",
+      "iat": 1733975400,
+      "exp": 1733976300,
+      "iss": "kydohub-api",
+      "aud": "kydohub-app",
+      "client": "web",
+      "attrs": {
+        "rooms": ["room-a", "room-b"],
+        "guardianOf": []
+      }
+    }
+  ]
+}

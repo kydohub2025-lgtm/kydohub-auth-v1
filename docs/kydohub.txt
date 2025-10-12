@@ -1,0 +1,103 @@
+kydohub
+│
+├─ docs                                      # 🧭 Primary AI + human knowledge hub
+│  ├─ 0_GLOBAL_CONTEXT …                     # Global system architecture, standards
+│  ├─ 1_INFRA_CONTEXT …                      # Infra + DevSecOps
+│  ├─ 2_DATABASE_CONTEXT …                   # DB schemas + validation
+│  ├─ 3_RULES_FOR_AI …                       # AI guardrails
+│  ├─ 4_FEATURES …                           # Feature PRDsspecstests
+│  ├─ 5_AI_TASKS …                           # Sequential AI jobs
+│  ├─ 6_INDEX_FILES …                        # Entry indexes for AI + humans
+│  └─ reference_assets …                     # Competitor research, UX studies
+│
+├─ apps                                      # 💻 Source code (frontend + backend)
+│  │
+│  ├─ web                                    # 🌐 Frontend (React + Vite + TS, feature-first)
+│  │  ├─ 0_CONTEXT                           # UI-specific architectural docs
+│  │  │  ├─ ui_architecture.md                # Overall frontend design patterns
+│  │  │  ├─ component_registry.md             # Registry of reusable components
+│  │  │  ├─ component_guidelines.md           # Rules for building new components
+│  │  │  └─ state_management.md               # ZustandRedux strategy, when to use context
+│  │  │
+│  │  └─ src
+│  │     ├─ features                         # Each feature fully self-contained
+│  │     │  ├─ students
+│  │     │  │  ├─ components                 # UI widgets (dumbreusable)
+│  │     │  │  ├─ pages                      # Feature pages (route-level screens)
+│  │     │  │  ├─ hooks                      # Custom hooks (e.g., useStudents)
+│  │     │  │  └─ services                   # API calls, react-query integrations
+│  │     │  └─ staff … (same pattern)        # All other features follow same structure
+│  │     │
+│  │     ├─ layouts                          # Shared layouts (AppLayout, TenantLayout with guards)
+│  │     ├─ router                           # Central router that stitches feature routes
+│  │     ├─ context                          # Global contexts (AuthContext, TenantContext)
+│  │     ├─ store                            # ZustandRedux store, if needed
+│  │     ├─ i18n                             # Internationalization configs
+│  │     ├─ styles                           # Global Tailwind, CSS tokens
+│  │     └─ utils                            # General utilities (helpers, formatters)
+│  │
+│  │  (plus Vite configs vite.config.ts, tsconfig.json, etc.)
+│  │
+│  └─ backend                                # ⚙️ Backend (FastAPI, Pydantic, Celery)
+│     ├─ app
+│     │  ├─ 0_CONTEXT                        # Backend-specific architectural docs
+│     │  │  ├─ api_architecture.md            # Routing, versioning, API flows
+│     │  │  ├─ auth_and_roles.md              # RBAC, permission model
+│     │  │  ├─ multi_tenant_backend.md        # Tenant-aware request handling
+│     │  │  └─ error_handling.md              # Global error strategy
+│     │  │
+│     │  ├─ api
+│     │  │  └─ v1
+│     │  │     ├─ routes.py                   # Root API router → includes only feature routers
+│     │  │     ├─ students                   # One subfolder per feature
+│     │  │     │  ├─ router.py                # FastAPI routes for Students
+│     │  │     │  ├─ schemas.py               # Pydantic models (inputoutput validation)
+│     │  │     │  ├─ service.py               # Business logic
+│     │  │     │  └─ repo.py                  # Data access layer (MongoPostgres queries)
+│     │  │     └─ staff … (same pattern)
+│     │  │
+│     │  ├─ core                             # Backend core utilities
+│     │  │  ├─ config.py                      # Env configs, settings loader
+│     │  │  ├─ security.py                    # JWT, RBAC, tenant validation
+│     │  │  ├─ db.py                          # Database client (Mongo, Redis fallback)
+│     │  │  └─ logging.py                     # Structured logs + observability hooks
+│     │  │
+│     │  ├─ middleware                       # Middlewares for request handling
+│     │  │  ├─ tenant_context.py              # Injects tenant into request state
+│     │  │  └─ error_handlers.py              # Central error handler
+│     │  │
+│     │  ├─ utils                            # Helper functions (shared backend utilities)
+│     │  └─ main.py                           # FastAPI entrypoint
+│     │
+│     └─ tests                               # Unit + integration tests
+│        ├─ test_students.py
+│        └─ test_auth.py
+│
+├─ packages                                  # 📦 Shared, versioned workspaces
+│  ├─ ui                                     # Shared UI library (design tokens, shadcn wrappers)
+│  │  └─ tokens
+│  │     └─ design_tokens.json                # Central design tokens
+│  ├─ api-client                             # Generated API client for frontend
+│  ├─ utils                                  # Shared JSTS utilities
+│  └─ config                                 # Cross-app constants & types
+│
+├─ database                                  # 🗄️ DB schemas & migrations (mirrors docs2_DATABASE_CONTEXT)
+│  ├─ 0_CONTEXT
+│  │  ├─ schema_overview.md
+│  │  ├─ validation_rules.md
+│  │  └─ multi_tenant_design.md
+│  ├─ migrations                             # DB migrations
+│  ├─ seed                                   # Seed data
+│  └─ schemas                                # JSONYAML schema files
+│
+├─ infra                                     # ☁️ Infrastructure-as-code
+│  ├─ docker
+│  ├─ k8s
+│  ├─ terraform
+│  └─ monitoring
+│
+├─ .githubworkflows                         # CICD pipelines (lint, build, deploy)
+├─ .cursor_context_config.json                # AI context config for Cursor
+├─ pnpm-workspace.yaml  package.json         # Monorepo workspace management
+└─ README.md                                  # Human entrypoint for repo
+
