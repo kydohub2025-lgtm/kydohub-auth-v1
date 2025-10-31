@@ -12,62 +12,64 @@ for every request. Timeouts are tuned to fail fast if the database is not reacha
 
 from __future__ import annotations
 
+import asyncio
 from typing import Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import WriteConcern, ReadPreference
 from pymongo.read_concern import ReadConcern
+from pymongo.errors import ServerSelectionTimeoutError
 
-from ..core.config import get_settings
+from app.core.config import get_settings
 
 
-# Global singleton client reused across the process.
+# ---------------------------------------------------------------------------
+# Global Mongo client (singleton, reused across process/Lambda invocations)
+# ---------------------------------------------------------------------------
 _client: Optional[AsyncIOMotorClient] = None
 
 
+# ---------------------------------------------------------------------------
+# Core: client accessor
+# ---------------------------------------------------------------------------
 def get_mongo_client() -> AsyncIOMotorClient:
     """
     Lazily create (and then reuse) the AsyncIOMotorClient.
 
-    Why a singleton?
-    ----------------
-    - In AWS Lambda, warm invocations reuse the same process, so keeping a single
-      client dramatically reduces cold-time and connection overhead.
-    - Motor/Mongo clients are thread-safe and designed to be reused.
+    Ensures .env.local is loaded before using the URI.
     """
     global _client
     if _client is None:
-        s = get_settings()
-        _client = AsyncIOMotorClient(
-            s.MONGODB_URI,
-            serverSelectionTimeoutMS=s.MONGO_CONNECT_TIMEOUT_MS,  # how long to wait for server discovery
-            socketTimeoutMS=s.MONGO_SOCKET_TIMEOUT_MS,            # network read/write timeout
-            uuidRepresentation="standard",
-        )
+        settings = get_settings()
+        uri = str(settings.MONGODB_URI)  # ✅ Convert AnyUrl -> str for Motor
+        print(f"[infra.mongo] Initializing Mongo client with URI: {uri}")
+        try:
+            _client = AsyncIOMotorClient(
+                uri,
+                serverSelectionTimeoutMS=settings.MONGO_CONNECT_TIMEOUT_MS,
+                socketTimeoutMS=settings.MONGO_SOCKET_TIMEOUT_MS,
+                uuidRepresentation="standard",
+            )
+        except Exception as e:
+            print(f"[infra.mongo] ❌ Failed to create Mongo client: {e}")
+            raise
     return _client
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 def get_db() -> AsyncIOMotorDatabase:
     """
     Return the application's default database object (e.g., 'kydohub').
-
-    Typical usage (developers):
-    ---------------------------
-    db = get_db()
-    await db.users.find_one({"_id": ...})
     """
-    return get_mongo_client()[get_settings().MONGODB_DB]
+    settings = get_settings()
+    return get_mongo_client()[settings.MONGODB_DB]
 
 
 def get_transaction_opts():
     """
     Standardized transaction/read/write concerns for critical writes.
-
-    Non-developer summary:
-    ----------------------
-    These knobs tell Mongo to prefer primary for reads, wait for majority write
-    acknowledgment, and read only committed data. We will use these for sensitive
-    operations (like refresh rotation) later in the implementation.
     """
     return {
         "read_preference": ReadPreference.PRIMARY,
@@ -76,11 +78,48 @@ def get_transaction_opts():
     }
 
 
+# ---------------------------------------------------------------------------
+# Lifecycle helpers
+# ---------------------------------------------------------------------------
+async def init_mongo() -> bool:
+    """
+    Called on FastAPI startup to verify Mongo connectivity.
+    Returns True if ping succeeds, False otherwise.
+    """
+    client = get_mongo_client()
+    try:
+        await client.admin.command("ping")
+        print("✅ [infra.mongo] MongoDB connection successful")
+        return True
+    except ServerSelectionTimeoutError as e:
+        print(f"❌ [infra.mongo] MongoDB not reachable: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ [infra.mongo] Unexpected Mongo error: {e}")
+        return False
+
+
 async def close_mongo_client() -> None:
     """
     Close the global Mongo client (rarely needed in Lambda; useful in local tests).
     """
     global _client
     if _client is not None:
+        print("[infra.mongo] Closing MongoDB client")
         _client.close()
         _client = None
+
+
+# ---------------------------------------------------------------------------
+# Optional local test runner (run `python app/infra/mongo.py`)
+# ---------------------------------------------------------------------------
+if __name__ == "__main__":
+    async def _test():
+        ok = await init_mongo()
+        if ok:
+            db = get_db()
+            print(f"Connected DB: {db.name}")
+            print("Collections:", await db.list_collection_names())
+        await close_mongo_client()
+
+    asyncio.run(_test())

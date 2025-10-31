@@ -1,80 +1,125 @@
 """
 db/migrations/001_auth_indexes.py
 
-Creates indexes required by Auth & /me/context.
+Creates indexes required by Auth (/me/context) with least-privilege & safety.
 
-Non-developer summary:
-----------------------
-Indexes make queries fast and keep data consistent. This script adds them for
-memberships, roles, ui_resources, refresh_sessions, and jti_blocklist. It also
-adds TTLs so expired sessions/block entries clean themselves up automatically.
+Security goals:
+- Enforce 1:1 link to Supabase identity (unique users.supabaseId).
+- Prevent duplicate memberships per (tenantId, userId).
+- TTL for revocation lists (refresh tokens & JTI blocklist).
+- Predictable names for indexes (easy to audit in Compass).
+
+Run:
+  python -m apps.backend.app.db.migrations.001_auth_indexes
 """
 
 from __future__ import annotations
 
 import asyncio
-from typing import Sequence
 
+# Use your existing absolute import style to match current codebase
 from apps.backend.app.infra.mongo import get_db, get_mongo_client
 
 
-async def create_memberships_indexes():
+async def create_users_indexes() -> None:
+    col = get_db()["users"]
+
+    # Canonical ID is Mongo _id (we do NOT create an extra userId field).
+    # Enforce 1:1 mapping with Supabase identity.
+    await col.create_index(
+        [("supabaseId", 1)],
+        unique=True,
+        name="uniq_supabaseId",
+    )
+
+    # Helpful lookups (optional). Keep if you often query by email.
+    await col.create_index(
+        [("profile.email", 1)],
+        name="by_email",
+    )
+
+
+async def create_memberships_indexes() -> None:
     col = get_db()["memberships"]
-    # Unique (tenantId, userId) guarantees one membership per tenant per user
-    await col.create_index([("tenantId", 1), ("userId", 1)], unique=True, name="uniq_tenant_user")
-    # Helpful when querying by roles in admin tools
-    await col.create_index([("tenantId", 1), ("roles", 1)], name="by_tenant_roles")
+
+    # Exactly one membership per (tenant, user)
+    await col.create_index(
+        [("tenantId", 1), ("userId", 1)],
+        unique=True,
+        name="uniq_tenant_user",
+    )
+
+    # Admin/reporting queries by role within a tenant
+    await col.create_index(
+        [("tenantId", 1), ("roles", 1)],
+        name="by_tenant_roles",
+    )
+
+    # Common filter
+    await col.create_index(
+        [("tenantId", 1), ("status", 1)],
+        name="by_tenant_status",
+    )
 
 
-async def create_roles_indexes():
+async def create_roles_indexes() -> None:
     col = get_db()["roles"]
-    await col.create_index([("tenantId", 1), ("name", 1)], unique=True, name="uniq_tenant_role")
+    await col.create_index(
+        [("tenantId", 1), ("name", 1)],
+        unique=True,
+        name="uniq_tenant_role",
+    )
     await col.create_index([("tenantId", 1)], name="by_tenant")
 
 
-async def create_ui_resources_indexes():
+async def create_ui_resources_indexes() -> None:
     col = get_db()["ui_resources"]
+    # One ui_resources document per tenant
     await col.create_index([("tenantId", 1)], unique=True, name="uniq_tenant")
-    # Optional: if you frequently filter pages/actions separately, add specific indexes as needed.
 
 
-async def create_refresh_sessions_indexes():
+async def create_refresh_sessions_indexes() -> None:
     col = get_db()["refresh_sessions"]
-    # Clean up expired sessions automatically
-    # TTL index: docs expire when 'expiresAt' < now; expireAfterSeconds=0 means "at the time in the field".
-    await col.create_index([("expiresAt", 1)], expireAfterSeconds=0, name="ttl_expires_at")
-    # Fast lookups by tokenHash and status
-    await col.create_index([("tokenHash", 1), ("status", 1)], name="by_hash_status")
-    # Helpful dashboards/analytics
-    await col.create_index([("userId", 1), ("tenantId", 1)], name="by_user_tenant")
+    # Auto-cleanup on expiresAt; 0 => expire at the exact timestamp
+    await col.create_index(
+        [("expiresAt", 1)],
+        expireAfterSeconds=0,
+        name="ttl_expires_at",
+    )
+    await col.create_index(
+        [("tokenHash", 1), ("status", 1)],
+        name="by_hash_status",
+    )
+    await col.create_index(
+        [("userId", 1), ("tenantId", 1)],
+        name="by_user_tenant",
+    )
 
 
-async def create_jti_blocklist_indexes():
+async def create_jti_blocklist_indexes() -> None:
     col = get_db()["jti_blocklist"]
-    # Expire block entries automatically when their window ends
-    await col.create_index([("expiresAt", 1)], expireAfterSeconds=0, name="ttl_expires_at")
-    await col.create_index([("jti", 1)], unique=True, name="uniq_jti")
+    await col.create_index(
+        [("expiresAt", 1)],
+        expireAfterSeconds=0,
+        name="ttl_expires_at",
+    )
+    await col.create_index(
+        [("jti", 1)],
+        unique=True,
+        name="uniq_jti",
+    )
 
 
-async def create_tenants_users_indexes():
-    # Optional but recommended for referential integrity and quick lookups
-    tcol = get_db()["tenants"]
-    await tcol.create_index([("tenantId", 1)], unique=True, name="uniq_tenantId")
-    ucol = get_db()["users"]
-    await ucol.create_index([("userId", 1)], unique=True, name="uniq_userId")
-
-
-async def run():
+async def run() -> None:
+    await create_users_indexes()
     await create_memberships_indexes()
     await create_roles_indexes()
     await create_ui_resources_indexes()
     await create_refresh_sessions_indexes()
     await create_jti_blocklist_indexes()
-    await create_tenants_users_indexes()
 
 
 if __name__ == "__main__":
-    # Allow running as a simple script: `python apps/backend/app/db/migrations/001_auth_indexes.py`
     asyncio.run(run())
-    # Ensure connections are closed cleanly in local runs
+    # Ensure clean shutdown of the shared client (important for CLIs & CI)
     get_mongo_client().close()

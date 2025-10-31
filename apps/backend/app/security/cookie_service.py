@@ -14,6 +14,7 @@ That consistency prevents "login loop" issues and CORS/CSRF surprises.
 
 from __future__ import annotations
 
+import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -34,6 +35,20 @@ def generate_csrf_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+def _cookie_env_overrides():
+    """Return (domain, secure) depending on dev overrides.
+
+    In local development over HTTP, browsers will drop `Secure` cookies and
+    cookies for mismatched domains. If DEV_INSECURE_COOKIES=true, relax the
+    flags so the flow works at http://localhost.
+    """
+    s = get_settings()
+    dev_insecure = os.getenv("DEV_INSECURE_COOKIES", "").lower() in {"1", "true", "yes"}
+    if dev_insecure and s.APP_STAGE.startswith("dev"):
+        return ("localhost", False)
+    return (s.COOKIE_DOMAIN, True)
+
+
 def set_access_cookie(response: Response, token: str, ttl_seconds: Optional[int] = None) -> None:
     """
     Set kydo_sess (HttpOnly) with SameSite=Lax, Domain=.kydohub.com, Path=/, Secure.
@@ -44,14 +59,15 @@ def set_access_cookie(response: Response, token: str, ttl_seconds: Optional[int]
     s = get_settings()
     ttl = ttl_seconds if ttl_seconds is not None else s.JWT_ACCESS_TTL_SEC
 
+    domain, secure = _cookie_env_overrides()
     response.set_cookie(
         key=s.ACCESS_COOKIE,
         value=token,
         expires=_expiry(ttl),
         max_age=ttl,
-        domain=s.COOKIE_DOMAIN,
+        domain=domain,
         path="/",
-        secure=True,
+        secure=secure,
         httponly=True,
         samesite="lax",  # cross-subdomain navigation OK, CSRF still enforced
     )
@@ -67,14 +83,15 @@ def set_refresh_cookie(response: Response, token: str, ttl_seconds: Optional[int
     s = get_settings()
     ttl = ttl_seconds if ttl_seconds is not None else s.JWT_REFRESH_TTL_SEC
 
+    domain, secure = _cookie_env_overrides()
     response.set_cookie(
         key=s.REFRESH_COOKIE,
         value=token,
         expires=_expiry(ttl),
         max_age=ttl,
-        domain=s.COOKIE_DOMAIN,
+        domain=domain,
         path="/auth/refresh",  # IMPORTANT: path scoped
-        secure=True,
+        secure=secure,
         httponly=True,
         samesite="lax",
     )
@@ -91,14 +108,15 @@ def set_csrf_cookie(response: Response, csrf_token: Optional[str] = None, ttl_se
     ttl = ttl_seconds if ttl_seconds is not None else s.JWT_REFRESH_TTL_SEC  # keep it as long as refresh by default
     token = csrf_token or generate_csrf_token()
 
+    domain, secure = _cookie_env_overrides()
     response.set_cookie(
         key=s.CSRF_COOKIE,
         value=token,
         expires=_expiry(ttl),
         max_age=ttl,
-        domain=s.COOKIE_DOMAIN,
+        domain=domain,
         path="/",
-        secure=True,
+        secure=secure,
         httponly=False,  # FE must be able to read it
         samesite="lax",
     )
@@ -132,13 +150,19 @@ def clear_web_cookies(response: Response) -> None:
     """
     s = get_settings()
     # expire immediately by setting max_age=0
+    domains = [s.COOKIE_DOMAIN]
+    dev_insecure = os.getenv("DEV_INSECURE_COOKIES", "").lower() in {"1", "true", "yes"}
+    if dev_insecure and s.APP_STAGE.startswith("dev"):
+        domains.append("localhost")
+
     for name, path in (
         (s.ACCESS_COOKIE, "/"),
         (s.REFRESH_COOKIE, "/auth/refresh"),
         (s.CSRF_COOKIE, "/"),
     ):
-        response.delete_cookie(
-            key=name,
-            domain=s.COOKIE_DOMAIN,
-            path=path,
-        )
+        for d in domains:
+            response.delete_cookie(
+                key=name,
+                domain=d,
+                path=path,
+            )

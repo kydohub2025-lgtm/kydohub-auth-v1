@@ -7,17 +7,26 @@ Core authorization dependency chain:
 
 Non-developer summary:
 ----------------------
-Every protected request passes through this "checkpoint". If the token is bad,
-blocked, stale, or the user doesn't belong to the tenant, the request is denied.
-Otherwise we attach useful context (who/tenant/permissions) to use later.
+Every protected API call passes through this checkpoint.
+
+1) We read the user’s session token (from header/cookie) and verify it.
+2) We make sure the session hasn’t been revoked (JTI check).
+3) We confirm the session isn’t stale (EV version check).
+4) We confirm the user actually belongs to the tenant in the token.
+5) We load their roles and permissions and attach small “hints” (ABAC) such as
+   which rooms or students they can see.
+
+If any step fails, the request is denied (401/403). If it passes, the route
+receives an AuthContext with userId, tenantId, roles, permissions, and ABAC.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Set
+from typing import Any, Dict, Set
 
-from fastapi import Depends, Header, Request
+from bson import ObjectId
+from fastapi import Request
 from fastapi.security.utils import get_authorization_scheme_param
 
 from ..core.config import get_settings
@@ -31,12 +40,10 @@ from ..repos.role_repo import RoleRepo
 
 @dataclass
 class AuthContext:
-    """
-    Data attached to the request if the guard chain passes.
-    """
+    """Data attached to the request if the guard chain passes."""
     request_id: str
     client: str  # "web" or "mobile"
-    tenant_id: str
+    tenant_id: ObjectId
     user_id: str
     roles: list[str] = field(default_factory=list)
     permissions: Set[str] = field(default_factory=set)
@@ -53,17 +60,16 @@ def _extract_client_mode(request: Request) -> str:
     cookies = request.cookies or {}
     if s.ACCESS_COOKIE in cookies or s.REFRESH_COOKIE in cookies:
         return "web"
-    # Heuristic: treat explicit Bearer as mobile; can be used by web too.
     auth = request.headers.get("Authorization") or ""
     scheme, _ = get_authorization_scheme_param(auth)
     if scheme.lower() == "bearer":
         return "mobile"
-    return "mobile"  # default: safer on CSRF assumptions
+    return "mobile"  # default bias helps with CSRF assumptions
 
 
 def _extract_access_token(request: Request) -> str:
     """
-    Get the access token first from Authorization: Bearer, otherwise from the kydo_sess cookie.
+    Get the access token first from Authorization: Bearer, otherwise from the access cookie.
     Raise UNAUTHENTICATED if not found.
     """
     s = get_settings()
@@ -72,7 +78,6 @@ def _extract_access_token(request: Request) -> str:
     if scheme.lower() == "bearer" and param:
         return param
 
-    # Cookie mode
     token = request.cookies.get(s.ACCESS_COOKIE)
     if token:
         return token
@@ -83,31 +88,30 @@ def _extract_access_token(request: Request) -> str:
 async def _check_jti_blocked(jti: str) -> None:
     """
     Deny request if JTI is blocked.
-    Favor availability: if backends fail to answer, treat as not blocked but log is emitted by service.
+    Availability-first: if backend cache fails, service logs a warning and we proceed.
     """
     if await jti_is_blocked(jti):
         raise AppError("UNAUTHENTICATED", "Session has been revoked. Please sign in again.", status=401)
 
 
-async def _check_ev_fresh(claim_ev: int, tenant_id: str, user_id: str) -> None:
+async def _check_ev_fresh(claim_ev: int, tenant_id: ObjectId, user_id: str) -> None:
     """
-    If server EV is greater than the token's EV, force a refresh.
-    If cache is unavailable and we can't determine EV, we allow the request (availability bias).
-    A later route may still return EV_OUTDATED on sensitive actions if stricter checks are added.
+    If server EV > token EV, force refresh. If cache unavailable, allow (availability bias).
     """
-    current = await cache.get_ev(tenant_id, user_id)
+    # Cache keys are strings; keep ObjectId as string when talking to cache
+    current = await cache.get_ev(str(tenant_id), user_id)
     if current is None:
-        return  # Availability over strictness; can be tightened later with DB fallback.
+        return
     if int(current) > int(claim_ev):
         raise AppError("EV_OUTDATED", "Your session is outdated. Please refresh.", status=401)
 
 
-async def _load_membership_and_perms(tenant_id: str, user_id: str) -> tuple[list[str], Set[str], dict]:
+async def _load_membership_and_perms(tenant_id: ObjectId, user_id: str) -> tuple[list[str], Set[str], dict]:
     """
-    Load membership and compute permissions. Use cache for permset if available.
+    Load membership and compute permissions. Uses cache for permset if available.
 
     Returns:
-      roles, permissions(set), abac(dict)
+      roles (list[str]), permissions (set[str]), abac (dict)
     """
     mrepo = MembershipRepo()
     membership = await mrepo.get(tenant_id, user_id)
@@ -116,41 +120,36 @@ async def _load_membership_and_perms(tenant_id: str, user_id: str) -> tuple[list
 
     roles = membership.roles or []
 
-    # Try permset cache
-    perms = await cache.get_permset(tenant_id, user_id)
+    # Try cached permset first
+    perms = await cache.get_permset(str(tenant_id), user_id)
     if perms is None:
-        # Single-flight recompute to avoid thundering herd
         key = f"permset:{tenant_id}:{user_id}"
         async with cache.SingleFlight.key(key):
-            # Another concurrent request may have filled it already:
-            perms = await cache.get_permset(tenant_id, user_id)
+            # Double-check inside singleflight to avoid thundering herd
+            perms = await cache.get_permset(str(tenant_id), user_id)
             if perms is None:
                 rrepo = RoleRepo()
-                perms = await rrepo.get_permset_for_roles(tenant_id, roles)
-                await cache.set_permset(tenant_id, user_id, perms)
+                perms = await rrepo.get_permset_for_roles(str(tenant_id), roles)
+                await cache.set_permset(str(tenant_id), user_id, perms)
 
-    # ABAC hints (minimal): rooms for staff; guardianOf for parents; pass-through from membership.attrs
+    # ABAC hints — pass through minimal lists from membership.attrs
     abac: dict = {}
     attrs = membership.attrs or {}
     if isinstance(attrs, dict):
         for key in ("rooms", "guardianOf"):
-            if key in attrs and isinstance(attrs[key], (list, tuple)):
-                abac[key] = list(attrs[key])
+            val = attrs.get(key)
+            if isinstance(val, (list, tuple)):
+                abac[key] = list(val)
 
-    return roles, perms, abac
+    return roles, set(perms or []), abac
 
 
 async def auth_chain(request: Request) -> AuthContext:
     """
     FastAPI dependency to secure routes.
 
-    Usage:
-        @router.get("/secure")
-        async def secure_endpoint(ctx: AuthContext = Depends(auth_chain)):
-            return {"user": ctx.user_id, "permissions": sorted(ctx.permissions)}
-
     Behavior:
-      - Extract token (header or cookie).
+      - Extract token (header/cookie).
       - Verify RS256 token (aud/iss/exp).
       - Deny if JTI is blocked.
       - Deny if EV is stale (server EV > token EV).
@@ -161,30 +160,35 @@ async def auth_chain(request: Request) -> AuthContext:
     request_id = getattr(request.state, "request_id", None) or request.headers.get("X-Request-ID")
     client_mode = _extract_client_mode(request)
 
-    # 1) Extract and verify token
+    # 1) Extract & verify token
     token = _extract_access_token(request)
     try:
         claims = verify_access_token(token)
-    except Exception as e:
-        # Map PyJWT errors to 401 with safe message; details omitted for security
-        msg = "Invalid or expired session."
-        raise AppError("UNAUTHENTICATED", msg, status=401)
+    except Exception:
+        # Avoid leaking crypto/validation details
+        raise AppError("UNAUTHENTICATED", "Invalid or expired session.", status=401)
 
     user_id = str(claims.get("sub") or "")
-    tenant_id = str(claims.get("tid") or "")
+    tenant_claim = str(claims.get("tid") or "")
     ev = int(claims.get("ev") or 0)
     jti = str(claims.get("jti") or "")
 
-    if not user_id or not tenant_id or not jti:
+    # Convert tenantId from claim to ObjectId (critical for Mongo matching)
+    if tenant_claim and ObjectId.is_valid(tenant_claim):
+        tenant_id = ObjectId(tenant_claim)
+    else:
+        raise AppError("UNAUTHENTICATED", "Invalid tenant identifier.", status=401)
+
+    if not user_id or not jti:
         raise AppError("UNAUTHENTICATED", "Malformed session.", status=401)
 
-    # 2) JTI blocklist check
+    # 2) JTI blocklist
     await _check_jti_blocked(jti)
 
     # 3) EV freshness
     await _check_ev_fresh(ev, tenant_id, user_id)
 
-    # 4) Membership & permissions (RBAC), ABAC hints
+    # 4) Membership, permissions, ABAC
     roles, perms, abac = await _load_membership_and_perms(tenant_id, user_id)
 
     return AuthContext(

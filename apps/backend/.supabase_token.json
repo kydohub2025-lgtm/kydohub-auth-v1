@@ -1,0 +1,48 @@
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6InFKMlJWY2V1WEhYQnlaY1YiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3JrdXRmZWFsdGJvcWxtYnVwanV1LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwNjFhZWJmMS0xMDIzLTRjZTktYTBmZC02ZjZhMTU4ZTQ1OTciLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzYxNDMyNjYwLCJpYXQiOjE3NjE0MjkwNjAsImVtYWlsIjoib3duZXJAa3lkb2h1Yi5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc2MTQyOTA2MH1dLCJzZXNzaW9uX2lkIjoiYWQ4MTlhMWEtZGQyZi00NTU1LWFhNDYtMWUxYWE5NDdiZWNmIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.wEtKNaXFMoPDW51i3tLKJSTV0yIM9BDx16NNn-3c4Sg",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "expires_at": 1761432660,
+  "refresh_token": "go6te334xbmc",
+  "user": {
+    "id": "061aebf1-1023-4ce9-a0fd-6f6a158e4597",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "owner@kydohub.com",
+    "email_confirmed_at": "2025-10-25T18:34:36.095003Z",
+    "phone": "",
+    "confirmed_at": "2025-10-25T18:34:36.095003Z",
+    "last_sign_in_at": "2025-10-25T21:51:00.468857147Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": [
+        "email"
+      ]
+    },
+    "user_metadata": {
+      "email_verified": true
+    },
+    "identities": [
+      {
+        "identity_id": "b7037260-8015-46da-83e6-16cd20585e57",
+        "id": "061aebf1-1023-4ce9-a0fd-6f6a158e4597",
+        "user_id": "061aebf1-1023-4ce9-a0fd-6f6a158e4597",
+        "identity_data": {
+          "email": "owner@kydohub.com",
+          "email_verified": false,
+          "phone_verified": false,
+          "sub": "061aebf1-1023-4ce9-a0fd-6f6a158e4597"
+        },
+        "provider": "email",
+        "last_sign_in_at": "2025-10-25T18:34:36.074093Z",
+        "created_at": "2025-10-25T18:34:36.074153Z",
+        "updated_at": "2025-10-25T18:34:36.074153Z",
+        "email": "owner@kydohub.com"
+      }
+    ],
+    "created_at": "2025-10-25T18:34:36.052324Z",
+    "updated_at": "2025-10-25T21:51:00.520736Z",
+    "is_anonymous": false
+  },
+  "weak_password": null
+}
